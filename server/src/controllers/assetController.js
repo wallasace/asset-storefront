@@ -185,10 +185,11 @@ async function deleteAsset(req, res) {
   }
 }
 
-// 7. BAIXAR O ARQUIVO DIGITAL DO ATIVO
+// 7. BAIXAR O ARQUIVO DIGITAL DO ATIVO (Com verificação de posse/compra)
 async function downloadAsset(req, res) {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
     const asset = await prisma.digitalAsset.findUnique({
       where: { id },
@@ -196,6 +197,27 @@ async function downloadAsset(req, res) {
 
     if (!asset || !asset.filePath) {
       return res.status(404).json({ error: 'Arquivo do ativo não encontrado.' });
+    }
+
+    const isCreator = asset.userId === userId;
+    const isAdmin = req.user.role === 'admin';
+
+    // Verifica se existe registro de compra
+    const purchase = await prisma.purchase.findUnique({
+      where: {
+        userId_assetId: {
+          userId,
+          assetId: id,
+        },
+      },
+    });
+
+    const hasPurchased = !!purchase;
+
+    if (!isCreator && !isAdmin && !hasPurchased) {
+      return res.status(403).json({
+        error: 'Você precisa adquirir este ativo para realizar o download.',
+      });
     }
 
     const fileName = `${asset.title.replace(/\s+/g, '_')}.${asset.fileFormat}`;

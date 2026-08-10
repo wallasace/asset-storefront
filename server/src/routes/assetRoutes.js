@@ -36,5 +36,6 @@ router.post(
 );
 
 router.delete('/:id', authMiddleware, deleteAsset);
+router.get('/:id/download', authMiddleware, downloadAsset);
 
 module.exports = router;

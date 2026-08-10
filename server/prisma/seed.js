@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -8,8 +7,7 @@ async function main() {
   console.log('🌱 Iniciando o processo de seed...');
 
   // 1. Criar Categorias Iniciais
-  // O 'upsert' cria o registro se ele não existir, ou ignora se já existir (pelo slug)
-  const categoria3D = await prisma.category.upsert({
+  await prisma.category.upsert({
     where: { slug: 'modelos-3d' },
     update: {},
     create: {
@@ -18,16 +16,7 @@ async function main() {
     },
   });
 
-  const categoriaSTL = await prisma.category.upsert({
-    where: { slug: 'arquivos-stl' },
-    update: {},
-    create: {
-      name: 'Arquivos STL',
-      slug: 'arquivos-stl',
-    },
-  });
-
-  const categoriaTexturas = await prisma.category.upsert({
+  await prisma.category.upsert({
     where: { slug: 'texturas-pbr' },
     update: {},
     create: {
@@ -36,11 +25,28 @@ async function main() {
     },
   });
 
+  await prisma.category.upsert({
+    where: { slug: 'shaders-vfx' },
+    update: {},
+    create: {
+      name: 'Shaders & VFX',
+      slug: 'shaders-vfx',
+    },
+  });
+
+  await prisma.category.upsert({
+    where: { slug: 'scripts-ferramentas' },
+    update: {},
+    create: {
+      name: 'Scripts & Ferramentas',
+      slug: 'scripts-ferramentas',
+    },
+  });
+
   console.log('✅ Categorias criadas com sucesso!');
 
-  // 2. Criptografar a Senha do Usuário de Teste
-  // Nunca salvamos senhas em texto puro no banco de dados!
-  const passwordHash = await bcrypt.hash('123456', 10);
+  // 2. Hash da Senha Padrão (123456)
+  const hashedPassword = await bcrypt.hash('123456', 10);
 
   // 3. Criar Usuário Admin / Teste
   const usuarioAdmin = await prisma.user.upsert({
@@ -49,16 +55,15 @@ async function main() {
     create: {
       name: 'Admin Storefront',
       email: 'admin@store.com',
-      passwordHash: passwordHash,
+      password: hashedPassword,
       role: 'admin',
     },
   });
 
-  console.log(`✅ Usuário padrão criado: ${usuarioAdmin.email}`);
-  console.log('🎉 Seed finalizado com sucesso!');
+  console.log('✅ Usuário Administrador criado com sucesso:', usuarioAdmin.email);
+  console.log('🌱 Processo de seed concluído com sucesso!');
 }
 
-// Executa a função e gerencia a desconexão com o banco
 main()
   .catch((e) => {
     console.error('❌ Erro durante a execução do seed:', e);
