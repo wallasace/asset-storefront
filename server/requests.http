@@ -1,0 +1,42 @@
+### 1. Testar se o Servidor está no ar
+GET http://localhost:3000/
+
+###
+
+### 2. Testar Registro de Novo Usuário
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Desenvolvedor Teste",
+  "email": "dev@teste.com",
+  "password": "senha_segura_123"
+}
+
+###
+
+### 3. Testar Login do Usuário que Criamos no Seed
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@store.com",
+  "password": "123456"
+}
+
+###
+
+### 4. Testar Login do Novo Usuário Cadastrado
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "dev@teste.com",
+  "password": "senha_segura_123"
+}
+
+### 5. Listar todos os Ativos do Catálogo (Público)
+GET http://localhost:3000/api/assets
+
+### 6. Filtrar Ativos por Categoria
+GET http://localhost:3000/api/assets?category=modelos-3d

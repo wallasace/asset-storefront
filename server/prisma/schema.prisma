@@ -1,0 +1,77 @@
+// Configuração do Banco de Dados e Gerador do Cliente
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Tabela de Usuários
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("customer") // "admin" ou "customer"
+  createdAt     DateTime       @default(now())
+
+  // Relacionamentos
+  assetsCreated DigitalAsset[]
+  orders        Order[]
+}
+
+// 2. Tabela de Categorias
+model Category {
+  id     String         @id @default(uuid())
+  name   String
+  slug   String         @unique
+  assets DigitalAsset[]
+}
+
+// 3. Tabela de Ativos Digitais
+model DigitalAsset {
+  id            String      @id @default(uuid())
+  title         String
+  description   String
+  price         Float
+  fileFormat    String      // Ex: "stl", "zip", "fbx"
+  fileSizeBytes Int
+  filePath      String      // Caminho do arquivo físico no servidor
+  thumbnailUrl  String      // Imagem de capa
+  createdAt     DateTime    @default(now())
+
+  // Chaves Estrangeiras
+  userId        String
+  creator       User        @relation(fields: [userId], references: [id])
+  
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+
+  orderItems    OrderItem[]
+}
+
+// 4. Tabela de Pedidos
+model Order {
+  id          String      @id @default(uuid())
+  totalAmount Float
+  createdAt   DateTime    @default(now())
+
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  items       OrderItem[]
+}
+
+// 5. Tabela de Itens do Pedido
+model OrderItem {
+  id               String       @id @default(uuid())
+  priceAtPurchase  Float
+
+  orderId          String
+  order            Order        @relation(fields: [orderId], references: [id])
+
+  assetId          String
+  asset            DigitalAsset @relation(fields: [assetId], references: [id])
+}
