@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 export function AssetCard({ asset }) {
-  // Ajusta a URL da imagem de capa (se for relativa, aponta para o backend)
+  const { addToCart, isInCart } = useCart();
+  const inCart = isInCart(asset.id);
+
   const imageUrl = asset.thumbnailUrl?.startsWith('http')
     ? asset.thumbnailUrl
     : `http://localhost:3000${asset.thumbnailUrl}`;
 
-  // Formatação amigável de preço (BRL)
   const formattedPrice = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -24,9 +26,7 @@ export function AssetCard({ asset }) {
       </div>
 
       <div style={styles.content}>
-        <span style={styles.categoryName}>
-          {asset.category?.name || 'Geral'}
-        </span>
+        <span style={styles.categoryName}>{asset.category?.name || 'Geral'}</span>
         <h3 style={styles.title}>{asset.title}</h3>
         <p style={styles.description}>
           {asset.description
@@ -36,9 +36,18 @@ export function AssetCard({ asset }) {
 
         <div style={styles.footer}>
           <span style={styles.price}>{formattedPrice}</span>
-          <Link to={`/assets/${asset.id}`} style={styles.detailsBtn}>
-            Ver Detalhes
-          </Link>
+          <div style={styles.btnGroup}>
+            <Link to={`/assets/${asset.id}`} style={styles.detailsBtn}>
+              Detalhes
+            </Link>
+            <button
+              onClick={() => addToCart(asset)}
+              disabled={inCart}
+              style={inCart ? styles.inCartBtn : styles.cartBtn}
+            >
+              {inCart ? 'No Carrinho ✓' : '🛒 Adicionar'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -54,7 +63,6 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   },
   imageContainer: {
     position: 'relative',
@@ -119,17 +127,41 @@ const styles = {
     borderTop: '1px solid #f1f5f9',
   },
   price: {
-    fontSize: '1.15rem',
+    fontSize: '1.1rem',
     fontWeight: 'bold',
     color: '#0f172a',
   },
+  btnGroup: {
+    display: 'flex',
+    gap: '0.4rem',
+  },
   detailsBtn: {
-    backgroundColor: '#0f172a',
-    color: '#ffffff',
+    backgroundColor: '#f1f5f9',
+    color: '#0f172a',
     textDecoration: 'none',
-    padding: '0.4rem 0.8rem',
+    padding: '0.4rem 0.6rem',
     borderRadius: '4px',
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     fontWeight: '500',
+  },
+  cartBtn: {
+    backgroundColor: '#0284c7',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.4rem 0.6rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  inCartBtn: {
+    backgroundColor: '#22c55e',
+    color: '#ffffff',
+    border: 'none',
+    padding: '0.4rem 0.6rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    fontWeight: 'bold',
+    cursor: 'default',
   },
 };

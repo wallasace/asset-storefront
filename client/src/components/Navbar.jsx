@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext'; // <--- IMPORTE AQUI
 
 export function Navbar() {
   const { user, signed, logout } = useAuth();
+  const { cartCount } = useCart(); // <--- OBTÉM CONTAGEM DO CARRINHO
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -34,6 +36,11 @@ export function Navbar() {
         </nav>
 
         <div style={styles.authGroup}>
+          {/* Atalho do Carrinho de Compras */}
+          <Link to="/cart" style={styles.cartBtn}>
+            🛒 Carrinho {cartCount > 0 && <span style={styles.badge}>{cartCount}</span>}
+          </Link>
+
           {signed ? (
             <div style={styles.userSection}>
               <div style={styles.userInfo}>
@@ -100,6 +107,26 @@ const styles = {
   authGroup: {
     display: 'flex',
     alignItems: 'center',
+    gap: '1.2rem',
+  },
+  cartBtn: {
+    color: '#f8fafc',
+    backgroundColor: '#334155',
+    textDecoration: 'none',
+    fontSize: '0.85rem',
+    fontWeight: 'bold',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+  },
+  badge: {
+    backgroundColor: '#38bdf8',
+    color: '#0f172a',
+    borderRadius: '50%',
+    padding: '2px 6px',
+    fontSize: '0.75rem',
   },
   userSection: {
     display: 'flex',
