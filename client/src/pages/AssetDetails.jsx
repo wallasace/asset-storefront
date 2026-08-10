@@ -2,43 +2,75 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 export function AssetDetails() {
   const { id } = useParams();
   const { signed } = useAuth();
+  const { addToCart, isInCart } = useCart();
+
   const [asset, setAsset] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    async function fetchAssetDetails() {
-      try {
-        setLoading(true);
-        const response = await api.get(`/assets/${id}`);
-        setAsset(response.data);
-      } catch (err) {
-        console.error('Erro ao carregar ativo:', err);
-        setError('Ativo digital não encontrado ou indisponível.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchAssetDetails();
   }, [id]);
 
-  // Auxiliar para converter bytes em formato legível (KB / MB)
+  async function fetchAssetDetails() {
+    try {
+      setLoading(true);
+      const response = await api.get(`/assets/${id}`);
+      setAsset(response.data);
+    } catch (err) {
+      console.error('Erro ao carregar ativo:', err);
+      setError('Ativo digital não encontrado ou indisponível.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // DOWNLOAD SEGURO: Envia o Token JWT via Axios e gera o arquivo via Blob
+  async function handleDownload() {
+    if (!signed) {
+      alert('Você precisa estar logado para realizar o download.');
+      return;
+    }
+
+    try {
+      setDownloading(true);
+
+      const response = await api.get(`/assets/${id}/download`, {
+        responseType: 'blob', // Recebe o arquivo em binário
+      });
+
+      // Cria um link temporário na memória para disparar o download no navegador
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const fileName = `${asset.title.replace(/\s+/g, '_')}.${asset.fileFormat}`;
+      link.setAttribute('download', fileName);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Erro ao baixar o arquivo:', err);
+      alert('Erro ao realizar download. Verifique se você já adquiriu este ativo.');
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   function formatBytes(bytes) {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
-
-  function handleDownload() {
-    // Abre a rota de download do backend
-    window.open(`http://localhost:3000/api/assets/${id}/download`, '_blank');
   }
 
   if (loading) {
@@ -54,6 +86,8 @@ export function AssetDetails() {
     );
   }
 
+  const inCart = isInCart(asset.id);
+
   const imageUrl = asset.thumbnailUrl?.startsWith('http')
     ? asset.thumbnailUrl
     : `http://localhost:3000${asset.thumbnailUrl}`;
@@ -68,12 +102,10 @@ export function AssetDetails() {
       <Link to="/" style={styles.backLink}>← Voltar ao Catálogo</Link>
 
       <div style={styles.grid}>
-        {/* Imagem de Capa */}
         <div style={styles.mediaSection}>
           <img src={imageUrl} alt={asset.title} style={styles.image} />
         </div>
 
-        {/* Informações e Detalhes Técnicos */}
         <div style={styles.infoSection}>
           <span style={styles.categoryBadge}>{asset.category?.name || 'Geral'}</span>
           <h1 style={styles.title}>{asset.title}</h1>
@@ -91,7 +123,6 @@ export function AssetDetails() {
             {asset.description || 'Nenhuma descrição técnica foi fornecida para este produto.'}
           </p>
 
-          {/* Ficha Técnica */}
           <div style={styles.specsCard}>
             <h4 style={styles.specsTitle}>Ficha Técnica</h4>
             <div style={styles.specRow}>
@@ -104,14 +135,26 @@ export function AssetDetails() {
             </div>
           </div>
 
-          {/* Ação de Download */}
           <div style={styles.actionBox}>
-            <button onClick={handleDownload} style={styles.downloadBtn}>
-              ⬇ Baixar Arquivo ({asset.fileFormat?.toUpperCase()})
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              style={styles.downloadBtn}
+            >
+              {downloading ? 'Baixando Arquivo...' : `⬇ Baixar Arquivo (${asset.fileFormat?.toUpperCase()})`}
             </button>
+
+            <button
+              onClick={() => addToCart(asset)}
+              disabled={inCart}
+              style={inCart ? styles.inCartBtn : styles.cartBtn}
+            >
+              {inCart ? 'Item no Carrinho ✓' : '🛒 Adicionar ao Carrinho'}
+            </button>
+
             {!signed && (
               <p style={styles.loginHint}>
-                Dica: <Link to="/login">Faça login</Link> para salvar este item na sua biblioteca.
+                Dica: <Link to="/login">Faça login</Link> para comprar e salvar este item na sua biblioteca.
               </p>
             )}
           </div>
@@ -227,6 +270,9 @@ const styles = {
   },
   actionBox: {
     marginTop: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.8rem',
   },
   downloadBtn: {
     width: '100%',
@@ -239,11 +285,33 @@ const styles = {
     fontWeight: 'bold',
     cursor: 'pointer',
   },
+  cartBtn: {
+    width: '100%',
+    padding: '0.8rem',
+    backgroundColor: '#0f172a',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '0.95rem',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  inCartBtn: {
+    width: '100%',
+    padding: '0.8rem',
+    backgroundColor: '#22c55e',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '0.95rem',
+    fontWeight: 'bold',
+    cursor: 'default',
+  },
   loginHint: {
     fontSize: '0.85rem',
     color: '#64748b',
     textAlign: 'center',
-    marginTop: '0.8rem',
+    marginTop: '0.4rem',
   },
   statusMessage: {
     textAlign: 'center',

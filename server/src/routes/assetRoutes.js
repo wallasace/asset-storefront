@@ -17,14 +17,16 @@ const router = express.Router();
 router.get('/categories', listCategories);
 router.get('/', listAssets);
 
-// Rota protegida: Busca ativos pertencentes ao usuário logado
-// IMPORTANTE: /me deve ser declarada ANTES de /:id para evitar conflito de roteamento
+// Rota protegida: Ativos do próprio usuário logado
 router.get('/me', authMiddleware, getUserAssets);
 
+// Rota de detalhes (Pública)
 router.get('/:id', getAssetById);
-router.get('/:id/download', downloadAsset);
 
-// Rotas protegidas (Mutação de dados)
+// Rota de download (Protegida por Autenticação)
+router.get('/:id/download', authMiddleware, downloadAsset); // <--- authMiddleware AQUI
+
+// Rotas de criação e remoção (Protegidas)
 router.post(
   '/',
   authMiddleware,
@@ -36,6 +38,5 @@ router.post(
 );
 
 router.delete('/:id', authMiddleware, deleteAsset);
-router.get('/:id/download', authMiddleware, downloadAsset);
 
 module.exports = router;

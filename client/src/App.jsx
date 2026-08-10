@@ -8,7 +8,8 @@ import { Register } from './pages/Register';
 import { PublishAsset } from './pages/PublishAsset';
 import { AssetDetails } from './pages/AssetDetails';
 import { MyAssets } from './pages/MyAssets';
-import { Cart } from './pages/Cart'; // <--- IMPORTE AQUI
+import { Cart } from './pages/Cart'; 
+import { Library } from './pages/Library';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/assets/:id" element={<AssetDetails />} />
             <Route path="/my-assets" element={<MyAssets />} />
             <Route path="/cart" element={<Cart />} /> {/* <--- ADICIONE AQUI */}
+            <Route path="/library" element={<Library />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>

@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const prisma = require('../lib/prisma');
 
 // 1. LISTAR TODAS AS CATEGORIAS
@@ -185,9 +187,14 @@ async function deleteAsset(req, res) {
   }
 }
 
-// 7. BAIXAR O ARQUIVO DIGITAL DO ATIVO (Com verificação de posse/compra)
+// 7. BAIXAR O ARQUIVO DIGITAL DO ATIVO
 async function downloadAsset(req, res) {
   try {
+    // Trava de segurança: Garante que req.user existe
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Usuário não autenticado.' });
+    }
+
     const { id } = req.params;
     const userId = req.user.id;
 
@@ -196,7 +203,7 @@ async function downloadAsset(req, res) {
     });
 
     if (!asset || !asset.filePath) {
-      return res.status(404).json({ error: 'Arquivo do ativo não encontrado.' });
+      return res.status(404).json({ error: 'Ativo ou caminho do arquivo não encontrado no banco.' });
     }
 
     const isCreator = asset.userId === userId;
@@ -220,11 +227,24 @@ async function downloadAsset(req, res) {
       });
     }
 
+    // Resolve o caminho absoluto do arquivo no disco
+    const absolutePath = path.isAbsolute(asset.filePath)
+      ? asset.filePath
+      : path.resolve(process.cwd(), asset.filePath);
+
+    // Verifica se o arquivo existe fisicamente na pasta uploads
+    if (!fs.existsSync(absolutePath)) {
+      console.error(`[DOWNLOAD] Arquivo não existe no disco: ${absolutePath}`);
+      return res.status(404).json({
+        error: 'O arquivo físico não foi encontrado na pasta uploads do servidor.',
+      });
+    }
+
     const fileName = `${asset.title.replace(/\s+/g, '_')}.${asset.fileFormat}`;
-    return res.download(asset.filePath, fileName);
+    return res.download(absolutePath, fileName);
   } catch (error) {
     console.error('Erro ao realizar download:', error);
-    return res.status(500).json({ error: 'Erro ao processar download do ativo.' });
+    return res.status(500).json({ error: 'Erro interno ao processar download do ativo.' });
   }
 }
 

@@ -20,19 +20,22 @@ export function Navbar() {
         </Link>
 
         <nav style={styles.nav}>
-          <Link to="/" style={styles.link}>
-            Catálogo
-          </Link>
-          {signed && (
-            <>
-              <Link to="/my-assets" style={styles.link}>
-                Meus Ativos
-              </Link>
-              <Link to="/publish" style={styles.publishLink}>
-                + Publicar Ativo
-              </Link>
-            </>
-          )}
+            <Link to="/" style={styles.link}>
+                Catálogo
+            </Link>
+            {signed && (
+                <>
+                <Link to="/library" style={styles.link}>
+                    Minha Biblioteca
+                </Link>
+                <Link to="/my-assets" style={styles.link}>
+                    Meus Ativos
+                </Link>
+                <Link to="/publish" style={styles.publishLink}>
+                    + Publicar Ativo
+                </Link>
+                </>
+            )}
         </nav>
 
         <div style={styles.authGroup}>
