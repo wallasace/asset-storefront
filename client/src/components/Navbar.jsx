@@ -13,24 +13,26 @@ export function Navbar() {
   return (
     <header style={styles.header}>
       <div style={styles.container}>
-        {/* Logo / Nome da Loja */}
         <Link to="/" style={styles.brand}>
           ⚡ NodeVault
         </Link>
 
-        {/* Links Principais */}
         <nav style={styles.nav}>
           <Link to="/" style={styles.link}>
             Catálogo
           </Link>
           {signed && (
-            <Link to="/publish" style={styles.publishLink}>
-              + Publicar Ativo
-            </Link>
+            <>
+              <Link to="/my-assets" style={styles.link}>
+                Meus Ativos
+              </Link>
+              <Link to="/publish" style={styles.publishLink}>
+                + Publicar Ativo
+              </Link>
+            </>
           )}
         </nav>
 
-        {/* Seção do Usuário / Auth */}
         <div style={styles.authGroup}>
           {signed ? (
             <div style={styles.userSection}>

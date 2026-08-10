@@ -5,7 +5,8 @@ import { Catalog } from './pages/Catalog';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { PublishAsset } from './pages/PublishAsset';
-import { AssetDetails } from './pages/AssetDetails'; // <--- IMPORTE AQUI
+import { AssetDetails } from './pages/AssetDetails';
+import { MyAssets } from './pages/MyAssets'; // <--- IMPORTE AQUI
 
 export default function App() {
   return (
@@ -17,7 +18,8 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/publish" element={<PublishAsset />} />
-          <Route path="/assets/:id" element={<AssetDetails />} /> {/* <--- ADICIONE AQUI */}
+          <Route path="/assets/:id" element={<AssetDetails />} />
+          <Route path="/my-assets" element={<MyAssets />} /> {/* <--- ADICIONE AQUI */}
         </Routes>
       </BrowserRouter>
     </AuthProvider>
