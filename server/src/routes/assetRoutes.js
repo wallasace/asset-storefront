@@ -2,8 +2,10 @@ const express = require('express');
 const {
   listCategories,
   listAssets,
+  getUserAssets,
   getAssetById,
   createAsset,
+  deleteAsset,
   downloadAsset,
 } = require('../controllers/assetController');
 const authMiddleware = require('../middlewares/authMiddleware');
@@ -11,13 +13,18 @@ const upload = require('../config/multer');
 
 const router = express.Router();
 
-// Rotas públicas (A rota /categories DEVE vir antes de /:id)
+// Rotas públicas
 router.get('/categories', listCategories);
 router.get('/', listAssets);
+
+// Rota protegida: Busca ativos pertencentes ao usuário logado
+// IMPORTANTE: /me deve ser declarada ANTES de /:id para evitar conflito de roteamento
+router.get('/me', authMiddleware, getUserAssets);
+
 router.get('/:id', getAssetById);
 router.get('/:id/download', downloadAsset);
 
-// Rota protegida (Upload)
+// Rotas protegidas (Mutação de dados)
 router.post(
   '/',
   authMiddleware,
@@ -27,5 +34,7 @@ router.post(
   ]),
   createAsset
 );
+
+router.delete('/:id', authMiddleware, deleteAsset);
 
 module.exports = router;

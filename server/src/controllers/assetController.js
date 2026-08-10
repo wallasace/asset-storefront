@@ -47,7 +47,27 @@ async function listAssets(req, res) {
   }
 }
 
-// 3. BUSCAR DETALHES DE UM ATIVO POR ID
+// 3. BUSCAR ATIVOS DO USUÁRIO LOGADO (Painel Meus Ativos)
+async function getUserAssets(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const assets = await prisma.digitalAsset.findMany({
+      where: { userId },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json(assets);
+  } catch (error) {
+    console.error('Erro ao buscar ativos do usuário:', error);
+    return res.status(500).json({ error: 'Erro ao buscar seus ativos.' });
+  }
+}
+
+// 4. BUSCAR DETALHES DE UM ATIVO POR ID
 async function getAssetById(req, res) {
   try {
     const { id } = req.params;
@@ -71,7 +91,7 @@ async function getAssetById(req, res) {
   }
 }
 
-// 4. CADASTRAR UM NOVO ATIVO
+// 5. CADASTRAR UM NOVO ATIVO
 async function createAsset(req, res) {
   try {
     const { title, description, price, fileFormat, categoryId } = req.body;
@@ -92,7 +112,6 @@ async function createAsset(req, res) {
       return res.status(400).json({ error: 'Informe um preço válido.' });
     }
 
-    // Busca a categoria selecionada ou pega a primeira como fallback
     let targetCategoryId = categoryId && categoryId.trim() !== '' ? categoryId : null;
 
     if (!targetCategoryId) {
@@ -136,7 +155,37 @@ async function createAsset(req, res) {
   }
 }
 
-// 5. BAIXAR O ARQUIVO DIGITAL DO ATIVO
+// 6. DELETAR UM ATIVO (Requer Autenticação + Verificação de Autorização)
+async function deleteAsset(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const asset = await prisma.digitalAsset.findUnique({
+      where: { id },
+    });
+
+    if (!asset) {
+      return res.status(404).json({ error: 'Ativo não encontrado.' });
+    }
+
+    // Regra de Autorização: Apenas o dono ou admin pode excluir
+    if (asset.userId !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Acesso negado. Você não é o proprietário deste ativo.' });
+    }
+
+    await prisma.digitalAsset.delete({
+      where: { id },
+    });
+
+    return res.json({ message: 'Ativo removido com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao deletar ativo:', error);
+    return res.status(500).json({ error: 'Erro ao remover ativo digital.' });
+  }
+}
+
+// 7. BAIXAR O ARQUIVO DIGITAL DO ATIVO
 async function downloadAsset(req, res) {
   try {
     const { id } = req.params;
@@ -160,7 +209,9 @@ async function downloadAsset(req, res) {
 module.exports = {
   listCategories,
   listAssets,
+  getUserAssets,
   getAssetById,
   createAsset,
+  deleteAsset,
   downloadAsset,
 };
